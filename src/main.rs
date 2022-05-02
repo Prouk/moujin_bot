@@ -2,6 +2,7 @@ use std::env;
 use serenity::Client;
 use serenity::prelude::GatewayIntents;
 mod handler;
+mod bin;
 
 #[tokio::main]
 async fn main() {
