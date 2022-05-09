@@ -1,8 +1,24 @@
-use std::collections::HashMap;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::prelude::application_command::ApplicationCommandInteractionDataOptionValue;
+use serde::Deserialize;
+use serde::Serialize;
+use std::string::String;
+use serenity::client::Context;
+use serenity::model::interactions::application_command::{ApplicationCommandInteraction, ApplicationCommandInteractionDataOptionValue};
+use serenity::model::interactions::InteractionResponseType;
+use serenity::utils::Colour;
 
-pub async fn get_ff_char(command: &ApplicationCommandInteraction) -> String {
+#[derive(Serialize, Deserialize)]
+struct FfChar {
+    CharUrl: String,
+    ImgUrl: String,
+    Title: String,
+    JobImg: String,
+    Level: String,
+    GrandCompany: String,
+}
+
+/// # Get the Final Fantasy XIV character infos embed through my api
+/// ctx must be &context and command must be here to respond
+pub async fn get_ff_char(ctx: &Context, command: &ApplicationCommandInteraction) {
     let world = command
         .data
         .options
@@ -36,16 +52,60 @@ pub async fn get_ff_char(command: &ApplicationCommandInteraction) -> String {
         "please format correctly the name".to_string()
     };
 
-    // let params = [("name", name_req), ("world", world_req)];
-    let mut map = HashMap::new();
-    map.insert("name", &name_req);
-    map.insert("world", &world_req);
-    println!("sending : {:?}", &map);
-    let res = reqwest::Client::new()
-        .post("http://valentintahon.com/apiFfxiv")
-        .json(&map)
+    command.create_interaction_response(&ctx.http, |response|{
+        response
+            .kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(|message|message.content(format!("Searching : {} in {} ...", name_req, world_req)))
+
+
+    }).await.map_err(|err| println!("${:?}",err)).ok();
+    let htmlresp = reqwest::Client::new()
+        .get("http://localhost:8080/apiFfxiv?world=".to_owned()+&world_req+"&name="+name_req.replace(" ", "%2B").as_str())
         .send()
         .await.unwrap().text().await.unwrap().to_string();
-    println!("got {:?}", res);
-    return "```".to_owned()+&res+"```";
+
+    let json_resp: FfChar = serde_json::from_str(&*htmlresp).unwrap();
+
+    if json_resp.Level == "" {
+        command.edit_original_interaction_response(&ctx.http, |response|{
+            response
+                .content(format!("No character found for {} in {}", name_req, world_req))
+        }).await.map_err(|err| println!("${:?}",err)).ok();
+        return;
+    }
+
+    command.edit_original_interaction_response(&ctx.http, |response|{
+        response
+            .content("")
+            .embed(|e|{
+                e
+                    .title(name_req)
+                    .description(if !json_resp.Title.is_empty(){json_resp.Title}else{"No title set".to_string()})
+                    .field("Level", json_resp.Level, false)
+                    .field("Grand Company", if !json_resp.GrandCompany.is_empty(){json_resp.GrandCompany}else{"No Grand Company set".to_string()}, false)
+                    .image(json_resp.ImgUrl)
+                    .url(json_resp.CharUrl)
+                    .thumbnail(json_resp.JobImg)
+                    .color(Colour::BLURPLE)
+            })
+    }).await.map_err(|err| println!("{:?}",err)).ok();
+}
+
+/// ping pong
+pub async fn ping(ctx: &Context, command: &ApplicationCommandInteraction) {
+    command
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::DeferredChannelMessageWithSource)
+                .interaction_response_data(|message| message.content("`Mother Fu**ing Pong !`"))
+        }).await.map_err(|err| println!("${:?}",err)).ok();
+}
+
+pub async fn no_command(ctx: &Context, command: &ApplicationCommandInteraction) {
+    command
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::DeferredChannelMessageWithSource)
+                .interaction_response_data(|message| message.content("`No command found for this one.`"))
+        }).await.map_err(|err| println!("${:?}",err)).ok();
 }

@@ -4,7 +4,6 @@ use serenity::model::gateway::{Ready};
 use serenity::model::interactions::application_command::ApplicationCommand;
 use serenity::model::interactions::Interaction;
 use serenity::model::prelude::application_command::ApplicationCommandOptionType;
-use serenity::model::prelude::{InteractionResponseType};
 
 use crate::bin;
 
@@ -21,23 +20,17 @@ pub fn get_handler() -> Handler {
         }
         async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
             if let Interaction::ApplicationCommand(command) = interaction {
-                let content = match command.data.name.as_str() {
-                    "ping" => "Pong".to_string(),
-                    "character" => {
-                        bin::main::get_ff_char(&command).await
+                match command.data.name.as_str() {
+                    "ping" => {
+                        bin::main::ping(&ctx,&command).await
                     },
-                    _ => "Command not implemented".to_string(),
+                    "character" => {
+                        bin::main::get_ff_char(&ctx,&command).await
+                    },
+                    _ => {
+                        bin::main::no_command(&ctx,&command).await
+                    },
                 };
-                if let Err(why) = command
-                    .create_interaction_response(&ctx.http, |response| {
-                        response
-                            .kind(InteractionResponseType::ChannelMessageWithSource)
-                            .interaction_response_data(|message| message.content(content))
-                    })
-                    .await
-                {
-                    println!("Cannot respond to slash command : {}", why)
-                }
             }
         }
     }
