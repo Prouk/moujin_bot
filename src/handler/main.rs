@@ -4,6 +4,7 @@ use serenity::model::gateway::{Ready};
 use serenity::model::interactions::application_command::ApplicationCommand;
 use serenity::model::interactions::Interaction;
 use serenity::model::prelude::application_command::ApplicationCommandOptionType;
+use serenity::model::prelude::ChannelType;
 
 use crate::bin;
 
@@ -72,18 +73,43 @@ pub async fn register_cmds(ctx: &Context) {
                     .add_string_choice("Sephirot", "Sephirot")
                     .add_string_choice("Sophia", "Sophia")
                     .add_string_choice("Zurvan", "Zurvan")
-                    .add_string_choice("Phoenix", "Phoenix")
-                    .add_string_choice("Phoenix", "Phoenix")
-                    .add_string_choice("Phoenix", "Phoenix")
+                    .add_string_choice("Aegis", "Aegis")
+                    .add_string_choice("Atomos", "Atomos")
+                    .add_string_choice("Carbuncle", "Carbuncle")
+                    .add_string_choice("Garuda", "Garuda")
+                    .add_string_choice("Gungnir", "Gungnir")
+                    .add_string_choice("Kujata", "Kujata")
+                    .add_string_choice("Ramuh", "Ramuh")
+                    .add_string_choice("Tonberry", "Tonberry")
+                    .add_string_choice("Typhon", "Typhon")
+                    .add_string_choice("Unicorn", "Unicorn")
+                    .required(true)
             })
             .create_option(|option| {
                 option
                     .name("name")
                     .description("character's firstname and lastname")
                     .kind(ApplicationCommandOptionType::String)
+                    .required(true)
             })
     })
         .await.map_err(|err|println!("{:?}", err)).ok();
+
+    ApplicationCommand::create_global_application_command(&ctx.http, |command| {
+        command
+            .name("join")
+            .description("join a voice channel")
+            .create_option(|option|{
+                option
+                    .name("channel")
+                    .description("the channel to join")
+                    .kind(ApplicationCommandOptionType::Channel)
+                    .channel_types(&[ChannelType::Voice])
+                    .required(true)
+            })
+    })
+        .await.map_err(|err|println!("{:?}", err)).ok();
+
 }
 
 /// # Clean all olds commands registered on the bot account

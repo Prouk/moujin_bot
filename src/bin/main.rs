@@ -60,7 +60,7 @@ pub async fn get_ff_char(ctx: &Context, command: &ApplicationCommandInteraction)
 
     }).await.map_err(|err| println!("${:?}",err)).ok();
     let htmlresp = reqwest::Client::new()
-        .get("http://localhost:8080/apiFfxiv?world=".to_owned()+&world_req+"&name="+name_req.replace(" ", "%2B").as_str())
+        .get("http://valentintahon.com/apiFfxiv?world=".to_owned()+&world_req+"&name="+name_req.replace(" ", "%2B").as_str())
         .send()
         .await.unwrap().text().await.unwrap().to_string();
 
