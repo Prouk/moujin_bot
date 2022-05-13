@@ -1,18 +1,9 @@
-use std::fmt::format;
-use std::fs::metadata;
-use std::time::Duration;
-use serenity::builder::{CreateEmbed, CreateSelectMenuOptions};
 use serenity::client::Context;
-use serenity::json::Value;
-use serenity::model::channel::{ChannelType, Embed, PartialChannel, Message};
-use serenity::model::id::GuildId;
+use serenity::model::channel::Message;
 use serenity::model::interactions::application_command::{ApplicationCommandInteraction, ApplicationCommandInteractionDataOptionValue};
 use serenity::model::prelude::{InteractionResponseType};
-use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
+use serenity::model::interactions::message_component::ButtonStyle;
 use serenity::utils::{Colour};
-use songbird::Call;
-use songbird::input::Metadata;
-use tokio::sync::MutexGuard;
 
 pub async fn join_voice(ctx: &Context, command: &ApplicationCommandInteraction) {
     let channel = command
@@ -133,7 +124,7 @@ pub async fn player(ctx: &Context, command: &ApplicationCommandInteraction) {
                     .colour(Colour::RED)
             ))
     }).await.map_err(|err| println!("${:?}",err)).ok();
-    let player = create_current_music_embed(ctx, command).await;
+    create_current_music_embed(ctx, command).await;
 }
 
 pub async fn create_current_music_embed(ctx: &Context, command: &ApplicationCommandInteraction) -> Message {
@@ -142,7 +133,7 @@ pub async fn create_current_music_embed(ctx: &Context, command: &ApplicationComm
         .expect("init")
         .clone();
     if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
-        let mut handler = handler_lock.lock().await;
+        let handler = handler_lock.lock().await;
         let metadata = handler.queue().current().unwrap().metadata().clone();
         let queue = handler.queue().current_queue();
         command.edit_original_interaction_response(&ctx.http, |response|
@@ -225,7 +216,7 @@ pub async fn skip(ctx: &Context, command: &ApplicationCommandInteraction) {
         .expect("init")
         .clone();
     if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
-        let mut handler = handler_lock.lock().await;
+        let handler = handler_lock.lock().await;
         handler.queue().skip();
         create_current_music_embed(ctx, command).await;
     }
