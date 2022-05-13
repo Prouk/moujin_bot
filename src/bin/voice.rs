@@ -7,7 +7,6 @@ use serenity::json::Value;
 use serenity::model::channel::{ChannelType, Embed, PartialChannel, Message};
 use serenity::model::id::GuildId;
 use serenity::model::interactions::application_command::{ApplicationCommandInteraction, ApplicationCommandInteractionDataOptionValue};
-use serenity::model::application::message_component::ButtonStyle;
 use serenity::model::prelude::{InteractionResponseType};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
 use serenity::utils::{Colour};
@@ -228,6 +227,6 @@ pub async fn skip(ctx: &Context, command: &ApplicationCommandInteraction) {
     if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
         let mut handler = handler_lock.lock().await;
         handler.queue().skip();
-        create_current_music_embed(ctx, command)
+        create_current_music_embed(ctx, command).await;
     }
 }

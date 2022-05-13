@@ -9,7 +9,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serenity = {version  ="0.11.1", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "voice" ,"unstable_discord_api"] }
+serenity = {version  ="0.11.2", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "voice" ,"unstable_discord_api"] }
 tokio = {version = "1.18.0", features = ["macros", "rt-multi-thread"]}
 dotenv = "0.15.0"
 reqwest = "0.11.10"
@@ -23,4 +23,4 @@ features = ["builtin-queue"]
 branch = "next"
 
 [patch."https://github.com/serenity-rs/serenity"]
-serenity = { version = "0.11.1" }
+serenity = { version = "0.11.2" }
