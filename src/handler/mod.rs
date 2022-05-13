@@ -1,2 +1,2 @@
-pub mod music;
+pub mod voice;
 pub mod main;

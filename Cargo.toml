@@ -2,17 +2,25 @@
 name = "moujin_bot"
 description = "Rust implementation of moujin-dusic site"
 readme = "README.md"
-authors = ["Prouk"]
+authors = ["Prouk <valentin.tahon2@gmail.com>"]
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serenity = {version  ="0.11.1", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+serenity = {version  ="0.11.1", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "voice" ,"unstable_discord_api"] }
 tokio = {version = "1.18.0", features = ["macros", "rt-multi-thread"]}
 dotenv = "0.15.0"
 reqwest = "0.11.10"
 bytemuck = "1.9.1"
 serde = { version = "1.0.137", features = ["derive"] }
 serde_json = "1.0.81"
+
+[dependencies.songbird]
+git = "https://github.com/serenity-rs/songbird"
+features = ["builtin-queue"]
+branch = "next"
+
+[patch."https://github.com/serenity-rs/serenity"]
+serenity = { version = "0.11.1" }

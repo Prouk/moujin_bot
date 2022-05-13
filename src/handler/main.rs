@@ -1,4 +1,4 @@
-use serenity::prelude::*;
+use serenity::client::{Context, EventHandler};
 use serenity::async_trait;
 use serenity::model::gateway::{Ready};
 use serenity::model::interactions::application_command::ApplicationCommand;
@@ -15,25 +15,36 @@ pub fn get_handler() -> Handler {
     #[async_trait]
     impl EventHandler for Handler {
         async fn ready(&self, ctx: Context, _ready: Ready) {
-            // clean_cmds(&ctx).await;
+            //clean_cmds(&ctx).await;
             register_cmds(&ctx).await;
-            crate::handler::music::register_music_cmds(&ctx).await;
+            crate::handler::voice::register_music_cmds(&ctx).await;
         }
+
         async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
             if let Interaction::ApplicationCommand(command) = interaction {
                 match command.data.name.as_str() {
                     "ping" => {
-                        bin::main::ping(&ctx,&command).await
+                        bin::main::ping(&ctx,&command).await;
                     },
                     "character" => {
-                        bin::main::get_ff_char(&ctx,&command).await
+                        bin::main::get_ff_char(&ctx,&command).await;
+                    },
+                    "join" => {
+                        bin::voice::join_voice(&ctx,&command).await;
+                    },
+                    "play" => {
+                        bin::voice::play(&ctx,&command).await;
+                    },
+                    "player" => {
+                        bin::voice::player(&ctx,&command).await;
                     },
                     _ => {
-                        bin::main::no_command(&ctx,&command).await
+                        bin::main::no_command(&ctx,&command).await;
                     },
                 };
             }
         }
+
     }
     Handler
 }
@@ -74,15 +85,9 @@ pub async fn register_cmds(ctx: &Context) {
                     .add_string_choice("Sophia", "Sophia")
                     .add_string_choice("Zurvan", "Zurvan")
                     .add_string_choice("Aegis", "Aegis")
-                    .add_string_choice("Atomos", "Atomos")
-                    .add_string_choice("Carbuncle", "Carbuncle")
                     .add_string_choice("Garuda", "Garuda")
-                    .add_string_choice("Gungnir", "Gungnir")
-                    .add_string_choice("Kujata", "Kujata")
                     .add_string_choice("Ramuh", "Ramuh")
                     .add_string_choice("Tonberry", "Tonberry")
-                    .add_string_choice("Typhon", "Typhon")
-                    .add_string_choice("Unicorn", "Unicorn")
                     .required(true)
             })
             .create_option(|option| {
