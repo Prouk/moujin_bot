@@ -1,5 +1,5 @@
 use serenity::client::Context;
-use serenity::model::interactions::application_command::{ApplicationCommand, ApplicationCommandType};
+use serenity::model::interactions::application_command::{ApplicationCommand};
 use serenity::model::prelude::application_command::ApplicationCommandOptionType;
 
 /// # Register music '/' commands
