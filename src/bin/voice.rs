@@ -10,11 +10,12 @@ use serenity::model::channel::Message;
 use serenity::model::id::MessageId;
 use serenity::model::interactions::application_command::{ApplicationCommandInteraction, ApplicationCommandInteractionDataOptionValue};
 use serenity::model::prelude::{ChannelId, InteractionResponseType, MessageInteraction};
-use serenity::model::interactions::message_component::ButtonStyle;
+use serenity::model::interactions::message_component::{ButtonStyle, InputTextStyle};
 use serenity::utils::{Colour};
 use songbird::input::Restartable;
 use songbird::tracks::{PlayMode, TrackState};
-use songbird::ytdl;
+use songbird::{Event, EventContext, TrackEvent, ytdl, EventHandler as VoiceEventHandler};
+use songbird::id::GuildId;
 
 pub async fn join_voice(ctx: &Context, command: &ApplicationCommandInteraction) {
     let channel = command
@@ -140,6 +141,7 @@ pub async fn play(ctx: &Context, command: &ApplicationCommandInteraction) {
                             .image(handler.queue().current().unwrap().metadata().thumbnail.as_ref().unwrap())
                             .url(handler.queue().current().unwrap().metadata().source_url.as_ref().unwrap())
                             .field("Channel",handler.queue().current().unwrap().metadata().channel.as_ref().unwrap(), false)
+                            .field("Status", play_state, false)
                             .field("Coming Next",handler.queue().current_queue().get(1).unwrap().metadata().title.as_ref().unwrap(), false)
                     })
             }).await.map_err(|err| println!("${:?}",err)).ok();
@@ -156,13 +158,44 @@ pub async fn play(ctx: &Context, command: &ApplicationCommandInteraction) {
                             .image(handler.queue().current().unwrap().metadata().thumbnail.as_ref().unwrap())
                             .url(handler.queue().current().unwrap().metadata().source_url.as_ref().unwrap())
                             .field("Channel",handler.queue().current().unwrap().metadata().channel.as_ref().unwrap(), false)
+                            .field("Status", play_state, false)
                     })
-                    /*.components(|components|{
+                    .components(|components|{
                         components
-                    })*/
+                            .create_action_row(|car|{
+                                car
+                                    .create_button(|button|{
+                                        button
+                                            .style(ButtonStyle::Success)
+                                            .label("Pause / Play")
+                                            .custom_id("pause")
+                                    })
+                                    .create_button(|button|{
+                                        button
+                                            .style(ButtonStyle::Primary)
+                                            .label("Skip")
+                                            .custom_id("skip")
+                                    })
+                                    .create_button(|button|{
+                                        button
+                                            .style(ButtonStyle::Danger)
+                                            .label("Stop")
+                                            .custom_id("stop")
+                                    })
+                            })
+                    })
             }).await.unwrap().id.to_string();
             i.with_section(Some(command.guild_id.unwrap().to_string())).set("command_id", command_id);
             i.write_to_file("conf.ini").unwrap();
+            let send_http = ctx.http.clone();
+            handler.add_global_event(
+                Event::Track(TrackEvent::End),
+                TrackEndNotifier {
+                    guild_id: GuildId::from(command.guild_id.unwrap()),
+                    chan_id: command.channel_id,
+                    cmd_ctx: ctx.clone()
+                },
+            );
         }
     }else{
         command.edit_original_interaction_response(&ctx.http, |response| {
@@ -191,7 +224,7 @@ pub async fn stop(ctx: &Context, command: &ApplicationCommandInteraction) {
         handler.queue().stop();
         handler.leave().await.map_err(|err| println!("${:?}",err)).ok();
 
-        let mut i = Ini::load_from_file("./conf.ini").unwrap();
+        let i = Ini::load_from_file("./conf.ini").unwrap();
 
         let command_id= i.section(Some(command.guild_id.unwrap().to_string())).unwrap().get("command_id").unwrap();
 
@@ -208,6 +241,55 @@ pub async fn stop(ctx: &Context, command: &ApplicationCommandInteraction) {
             response
                 .content("Not in a voice channel, try `/join <channel's name>` before stopping the player.")
         }).await.map_err(|err| println!("${:?}",err)).ok();
-        return;
+    }
+}
+
+struct TrackEndNotifier {
+    guild_id: GuildId,
+    chan_id: ChannelId,
+    cmd_ctx: Context,
+}
+
+#[async_trait]
+impl VoiceEventHandler for TrackEndNotifier {
+    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
+        if let EventContext::Track(track_list) = ctx {
+            let manager = songbird::get(&self.cmd_ctx)
+                .await
+                .expect("init")
+                .clone();
+
+            if let Some(handler_lock) = manager.get(self.guild_id.unwrap()) {
+                let mut handler = handler_lock.lock().await;
+
+                let play_state = match handler.queue().current() {
+                    Some(trackhandle) => trackhandle.get_info().await.unwrap().playing,
+                    None => PlayMode::Stop
+                };
+
+                let i = Ini::load_from_file("./conf.ini").unwrap();
+
+                let command_id= i.section(Some(self.guild_id.unwrap().to_string())).unwrap().get("command_id").unwrap();
+
+                let num = command_id.parse::<u64>().unwrap();
+
+                self.chan_id.edit_message(&self.cmd_ctx.http, MessageId::from(num), |message|{
+                    message
+                        .content(format!("`{}` added to the queue", handler.queue().current_queue().last().unwrap().metadata().title.as_ref().unwrap()))
+                        .embed(|e|{
+                            e
+                                .title("Moujin Player")
+                                .description(handler.queue().current().unwrap().metadata().title.as_ref().unwrap())
+                                .image(handler.queue().current().unwrap().metadata().thumbnail.as_ref().unwrap())
+                                .url(handler.queue().current().unwrap().metadata().source_url.as_ref().unwrap())
+                                .field("Channel",handler.queue().current().unwrap().metadata().channel.as_ref().unwrap(), false)
+                                .field("Status", play_state, false)
+                                .field("Coming Next",handler.queue().current_queue().get(1).unwrap().metadata().title.as_ref().unwrap(), false)
+                        })
+                }).await.map_err(|err| println!("${:?}",err)).ok();
+            }
+        }
+
+        None
     }
 }
