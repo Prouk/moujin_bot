@@ -16,3 +16,4 @@ Cargo.lock
 
 # Ne pas git
 conf.ini
+.env
