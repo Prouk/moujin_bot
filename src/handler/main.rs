@@ -35,8 +35,8 @@ pub fn get_handler() -> Handler {
                     "play" => {
                         bin::voice::play(&ctx,&command).await;
                     },
-                    "player" => {
-                        bin::voice::player(&ctx,&command).await;
+                    "stop" => {
+                        bin::voice::stop(&ctx,&command).await;
                     },
                     _ => {
                         bin::main::no_command(&ctx,&command).await;
@@ -95,21 +95,6 @@ pub async fn register_cmds(ctx: &Context) {
                     .name("name")
                     .description("character's firstname and lastname")
                     .kind(ApplicationCommandOptionType::String)
-                    .required(true)
-            })
-    })
-        .await.map_err(|err|println!("{:?}", err)).ok();
-
-    ApplicationCommand::create_global_application_command(&ctx.http, |command| {
-        command
-            .name("join")
-            .description("join a voice channel")
-            .create_option(|option|{
-                option
-                    .name("channel")
-                    .description("the channel to join")
-                    .kind(ApplicationCommandOptionType::Channel)
-                    .channel_types(&[ChannelType::Voice])
                     .required(true)
             })
     })
