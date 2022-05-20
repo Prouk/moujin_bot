@@ -3,7 +3,7 @@ name = "moujin_bot"
 description = "Rust implementation of moujin-dusic site"
 readme = "README.md"
 authors = ["Prouk <valentin.tahon2@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

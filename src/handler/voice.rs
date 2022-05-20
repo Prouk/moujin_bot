@@ -20,12 +20,6 @@ pub async fn register_music_cmds(ctx: &Context) {
     })
         .await.map_err(|err|println!("{:?}", err)).ok();
 
-    ApplicationCommand::create_global_application_command(&ctx.http, |command| {
-        command
-            .name("player")
-            .description("display the music player")
-    })
-    .await.map_err(|err|println!("{:?}", err)).ok();
 
     ApplicationCommand::create_global_application_command(&ctx.http, |command| {
         command
@@ -39,13 +33,6 @@ pub async fn register_music_cmds(ctx: &Context) {
                     .channel_types(&[ChannelType::Voice])
                     .required(true)
             })
-    })
-        .await.map_err(|err|println!("{:?}", err)).ok();
-
-    ApplicationCommand::create_global_application_command(&ctx.http, |command| {
-        command
-            .name("stop")
-            .description("stop the current queue.")
     })
         .await.map_err(|err|println!("{:?}", err)).ok();
 }

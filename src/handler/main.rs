@@ -4,7 +4,6 @@ use serenity::model::gateway::{Ready};
 use serenity::model::interactions::application_command::ApplicationCommand;
 use serenity::model::interactions::Interaction;
 use serenity::model::prelude::application_command::ApplicationCommandOptionType;
-use serenity::model::prelude::ChannelType;
 
 use crate::bin;
 
@@ -15,13 +14,13 @@ pub fn get_handler() -> Handler {
     #[async_trait]
     impl EventHandler for Handler {
         async fn ready(&self, ctx: Context, _ready: Ready) {
-            //clean_cmds(&ctx).await;
+            // clean_cmds(&ctx).await;
             register_cmds(&ctx).await;
             crate::handler::voice::register_music_cmds(&ctx).await;
         }
 
         async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-            if let Interaction::ApplicationCommand(command) = interaction {
+            if let Interaction::ApplicationCommand(command) = &interaction {
                 match command.data.name.as_str() {
                     "ping" => {
                         bin::main::ping(&ctx,&command).await;
@@ -34,14 +33,24 @@ pub fn get_handler() -> Handler {
                     },
                     "play" => {
                         bin::voice::play(&ctx,&command).await;
-                    },
-                    "stop" => {
-                        bin::voice::stop(&ctx,&command).await;
-                    },
+                    }
                     _ => {
                         bin::main::no_command(&ctx,&command).await;
                     },
                 };
+            }
+            if let Interaction::MessageComponent(command) = &interaction {
+                match command.data.custom_id.as_str() {
+                    "skip" => {
+                        bin::voice::skip(&ctx, command).await;
+                    },
+                    "stop" => {
+                        bin::voice::stop(&ctx, command).await;
+                    },
+                    _ => {
+                        bin::main::no_component_command(&ctx, command).await;
+                    },
+                }
             }
         }
 
