@@ -15,4 +15,4 @@ Cargo.lock
 /target
 
 # Ne pas git
-.env
+conf.ini
