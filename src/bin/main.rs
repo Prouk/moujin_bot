@@ -4,6 +4,7 @@ use std::string::String;
 use serenity::client::Context;
 use serenity::model::interactions::application_command::{ApplicationCommandInteraction, ApplicationCommandInteractionDataOptionValue};
 use serenity::model::interactions::InteractionResponseType;
+use serenity::model::interactions::message_component::MessageComponentInteraction;
 use serenity::utils::Colour;
 
 #[derive(Serialize, Deserialize)]
@@ -102,6 +103,15 @@ pub async fn ping(ctx: &Context, command: &ApplicationCommandInteraction) {
 }
 
 pub async fn no_command(ctx: &Context, command: &ApplicationCommandInteraction) {
+    command
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::DeferredChannelMessageWithSource)
+                .interaction_response_data(|message| message.content("`No command found for this one.`"))
+        }).await.map_err(|err| println!("${:?}",err)).ok();
+}
+
+pub async fn no_component_command(ctx: &Context, command: &MessageComponentInteraction) {
     command
         .create_interaction_response(&ctx.http, |response| {
             response

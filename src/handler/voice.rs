@@ -1,6 +1,7 @@
 use serenity::client::Context;
 use serenity::model::interactions::application_command::{ApplicationCommand};
 use serenity::model::prelude::application_command::ApplicationCommandOptionType;
+use serenity::model::prelude::ChannelType;
 
 /// # Register music '/' commands
 /// Preferably in 'ready' handler
@@ -19,10 +20,19 @@ pub async fn register_music_cmds(ctx: &Context) {
     })
         .await.map_err(|err|println!("{:?}", err)).ok();
 
+
     ApplicationCommand::create_global_application_command(&ctx.http, |command| {
         command
-            .name("player")
-            .description("display the music player")
+            .name("join")
+            .description("join a voice channel")
+            .create_option(|option|{
+                option
+                    .name("channel")
+                    .description("the channel to join")
+                    .kind(ApplicationCommandOptionType::Channel)
+                    .channel_types(&[ChannelType::Voice])
+                    .required(true)
+            })
     })
-    .await.map_err(|err|println!("{:?}", err)).ok();
+        .await.map_err(|err|println!("{:?}", err)).ok();
 }

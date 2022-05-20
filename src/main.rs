@@ -1,4 +1,4 @@
-use std::env;
+use ini::Ini;
 use serenity::Client;
 use serenity::prelude::GatewayIntents;
 use songbird::SerenityInit;
@@ -7,9 +7,8 @@ mod bin;
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().expect("Failed to load .env file");
 
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+    let i = Ini::load_from_file("./conf.ini").unwrap();
 
     let intents =
         GatewayIntents::GUILD_VOICE_STATES
@@ -17,7 +16,7 @@ async fn main() {
         | GatewayIntents::GUILD_INTEGRATIONS
         | GatewayIntents::GUILD_MESSAGES;
 
-    let mut client = Client::builder(token, intents)
+    let mut client = Client::builder(i.section(Some("TOKENS")).unwrap().get("DISCORD_TOKEN").unwrap(), intents)
         .event_handler(handler::main::get_handler())
         .register_songbird()
         .await
