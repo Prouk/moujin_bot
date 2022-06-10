@@ -138,6 +138,7 @@ pub async fn play(ctx: &Context, command: &ApplicationCommandInteraction) {
                             .field("Coming Next",handler.queue().current_queue().get(1).unwrap().metadata().title.as_ref().unwrap(), false)
                     })
             }).await.map_err(|err| println!("${:?}",err)).ok();
+            command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
         } else{
 
             let message = command.edit_original_interaction_response(&ctx.http, |response| {
