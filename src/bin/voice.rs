@@ -1,3 +1,6 @@
+use std::borrow::Borrow;
+use std::fmt::format;
+use std::time::Duration;
 use ini::Ini;
 use serenity::client::Context;
 use serenity::async_trait;
@@ -7,8 +10,9 @@ use serenity::model::prelude::{ChannelId, InteractionResponseType};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
 use serenity::utils::{Colour};
 use songbird::tracks::{PlayMode};
-use songbird::{Event, EventContext, TrackEvent, ytdl, EventHandler as VoiceEventHandler};
+use songbird::{Event, EventContext, TrackEvent, ytdl, EventHandler as VoiceEventHandler, Config};
 use songbird::id::GuildId;
+use tokio::time::sleep;
 
 pub async fn join_voice(ctx: &Context, command: &ApplicationCommandInteraction) {
     let channel = command
@@ -48,6 +52,8 @@ pub async fn join_voice(ctx: &Context, command: &ApplicationCommandInteraction) 
                         .content(format!("Joined `{}`.",choosen_channel.name.as_ref().unwrap()))
                 })
         }).await.map_err(|err| println!("${:?}",err)).ok();
+        sleep(Duration::from_secs(5));
+        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }
 }
 
@@ -175,6 +181,13 @@ pub async fn play(ctx: &Context, command: &ApplicationCommandInteraction) {
                                             .label("Stop")
                                             .custom_id("stop")
                                     })
+                                    .create_button(|button|{
+                                        button
+                                            .style(ButtonStyle::Danger)
+                                            .label("Send me that")
+                                            .custom_id("send_info")
+                                    })
+
                             })
                     })
             }).await.unwrap();
@@ -228,6 +241,8 @@ pub async fn stop(ctx: &Context, command: &MessageComponentInteraction) {
             response
                 .content("Music player stopped.")
         }).await.map_err(|err| println!("${:?}",err)).ok();
+        sleep(Duration::from_secs(5));
+        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
 
     }else {
         command.edit_original_interaction_response(&ctx.http, |response| {
@@ -256,8 +271,84 @@ pub async fn skip (ctx: &Context, command: &MessageComponentInteraction) {
         let handler = handler_lock.lock().await;
         handler.queue().skip().map_err(|err| println!("${:?}",err)).ok();
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("Song skipped."))).await.map_err(|err| println!("${:?}",err)).ok();
+        sleep(Duration::from_secs(5));
+        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }else {
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("No song playing, I don't even how you can click this."))).await.map_err(|err| println!("${:?}",err)).ok();
+    }
+}
+
+
+pub async fn pause (ctx: &Context, command: &MessageComponentInteraction) {
+
+    let manager = songbird::get(ctx)
+        .await
+        .expect("init")
+        .clone();
+
+    command.create_interaction_response(&ctx.http, |response|{
+        response
+            .kind(InteractionResponseType::UpdateMessage)
+            .interaction_response_data(|message|{
+                message
+                    .content(format!("Pausing music ..."))
+            })
+    }).await.map_err(|err| println!("${:?}",err)).ok();
+
+    if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
+        let mut handler = handler_lock.lock().await;
+
+        let play_state = match handler.queue().current() {
+            Some(trackhandle) => trackhandle.get_info().await.unwrap().playing,
+            None => PlayMode::Stop
+        };
+
+        if play_state != PlayMode::Pause {
+            handler.queue().pause();
+        }else {
+            handler.queue().resume();
+        }
+        sleep(Duration::from_secs(5));
+        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
+    }else {
+        command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("No song playing, I don't even how you can click this."))).await.map_err(|err| println!("${:?}",err)).ok();
+    }
+
+}
+
+pub async fn send_music(ctx: &Context, command: &MessageComponentInteraction) {
+    let manager = songbird::get(ctx)
+        .await
+        .expect("init")
+        .clone();
+
+    command.create_interaction_response(&ctx.http, |response|{
+        response
+            .kind(InteractionResponseType::UpdateMessage)
+            .interaction_response_data(|message|{
+                message
+                    .content(format!("Sending you the music..."))
+            })
+    }).await.map_err(|err| println!("${:?}",err)).ok();
+
+    if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
+        let mut handler = handler_lock.lock().await;
+
+        command.user.direct_message(&ctx.http, |m| {
+            m
+                .content(format!("Here you go ma boi !"))
+                .embed(|e| {
+                    e
+                        .colour(Colour::LIGHTER_GREY)
+                        .title(handler.queue().current().unwrap().metadata().title.as_ref().unwrap())
+                        .description(handler.queue().current().unwrap().metadata().date.as_ref().unwrap())
+                        .image(handler.queue().current().unwrap().metadata().thumbnail.as_ref().unwrap())
+                        .url(handler.queue().current().unwrap().metadata().source_url.as_ref().unwrap())
+                        .field("Channel",handler.queue().current().unwrap().metadata().channel.as_ref().unwrap(), false)
+                })
+        }).await.map_err(|err| println!("${:?}",err)).ok();
+        sleep(Duration::from_secs(5));
+        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }
 }
 
