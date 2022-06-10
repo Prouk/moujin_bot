@@ -264,7 +264,6 @@ pub async fn skip (ctx: &Context, command: &MessageComponentInteraction) {
         let handler = handler_lock.lock().await;
         handler.queue().skip().map_err(|err| println!("${:?}",err)).ok();
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("Song skipped."))).await.map_err(|err| println!("${:?}",err)).ok();
-        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }else {
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("No song playing, I don't even how you can click this."))).await.map_err(|err| println!("${:?}",err)).ok();
     }
