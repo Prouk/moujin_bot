@@ -1,6 +1,3 @@
-use std::borrow::Borrow;
-use std::fmt::format;
-use std::time::Duration;
 use ini::Ini;
 use serenity::client::Context;
 use serenity::async_trait;
@@ -10,9 +7,8 @@ use serenity::model::prelude::{ChannelId, InteractionResponseType};
 use serenity::model::interactions::message_component::{ButtonStyle, MessageComponentInteraction};
 use serenity::utils::{Colour};
 use songbird::tracks::{PlayMode};
-use songbird::{Event, EventContext, TrackEvent, ytdl, EventHandler as VoiceEventHandler, Config};
+use songbird::{Event, EventContext, TrackEvent, ytdl, EventHandler as VoiceEventHandler};
 use songbird::id::GuildId;
-use tokio::time::sleep;
 
 pub async fn join_voice(ctx: &Context, command: &ApplicationCommandInteraction) {
     let channel = command
@@ -52,8 +48,6 @@ pub async fn join_voice(ctx: &Context, command: &ApplicationCommandInteraction) 
                         .content(format!("Joined `{}`.",choosen_channel.name.as_ref().unwrap()))
                 })
         }).await.map_err(|err| println!("${:?}",err)).ok();
-        sleep(Duration::from_secs(5));
-        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }
 }
 
@@ -144,7 +138,6 @@ pub async fn play(ctx: &Context, command: &ApplicationCommandInteraction) {
                             .field("Coming Next",handler.queue().current_queue().get(1).unwrap().metadata().title.as_ref().unwrap(), false)
                     })
             }).await.map_err(|err| println!("${:?}",err)).ok();
-            command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
         } else{
 
             let message = command.edit_original_interaction_response(&ctx.http, |response| {
@@ -183,7 +176,7 @@ pub async fn play(ctx: &Context, command: &ApplicationCommandInteraction) {
                                     })
                                     .create_button(|button|{
                                         button
-                                            .style(ButtonStyle::Danger)
+                                            .style(ButtonStyle::Secondary)
                                             .label("Send me that")
                                             .custom_id("send_info")
                                     })
@@ -241,7 +234,6 @@ pub async fn stop(ctx: &Context, command: &MessageComponentInteraction) {
             response
                 .content("Music player stopped.")
         }).await.map_err(|err| println!("${:?}",err)).ok();
-        sleep(Duration::from_secs(5));
         command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
 
     }else {
@@ -271,7 +263,6 @@ pub async fn skip (ctx: &Context, command: &MessageComponentInteraction) {
         let handler = handler_lock.lock().await;
         handler.queue().skip().map_err(|err| println!("${:?}",err)).ok();
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("Song skipped."))).await.map_err(|err| println!("${:?}",err)).ok();
-        sleep(Duration::from_secs(5));
         command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }else {
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("No song playing, I don't even how you can click this."))).await.map_err(|err| println!("${:?}",err)).ok();
@@ -296,7 +287,7 @@ pub async fn pause (ctx: &Context, command: &MessageComponentInteraction) {
     }).await.map_err(|err| println!("${:?}",err)).ok();
 
     if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
-        let mut handler = handler_lock.lock().await;
+        let handler = handler_lock.lock().await;
 
         let play_state = match handler.queue().current() {
             Some(trackhandle) => trackhandle.get_info().await.unwrap().playing,
@@ -304,12 +295,10 @@ pub async fn pause (ctx: &Context, command: &MessageComponentInteraction) {
         };
 
         if play_state != PlayMode::Pause {
-            handler.queue().pause();
+            handler.queue().pause().map_err(|err| println!("${:?}",err)).ok();
         }else {
-            handler.queue().resume();
+            handler.queue().resume().map_err(|err| println!("${:?}",err)).ok();
         }
-        sleep(Duration::from_secs(5));
-        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }else {
         command.edit_original_interaction_response(&ctx.http,|message|message.content(format!("No song playing, I don't even how you can click this."))).await.map_err(|err| println!("${:?}",err)).ok();
     }
@@ -332,7 +321,7 @@ pub async fn send_music(ctx: &Context, command: &MessageComponentInteraction) {
     }).await.map_err(|err| println!("${:?}",err)).ok();
 
     if let Some(handler_lock) = manager.get(command.guild_id.unwrap()) {
-        let mut handler = handler_lock.lock().await;
+        let handler = handler_lock.lock().await;
 
         command.user.direct_message(&ctx.http, |m| {
             m
@@ -347,8 +336,6 @@ pub async fn send_music(ctx: &Context, command: &MessageComponentInteraction) {
                         .field("Channel",handler.queue().current().unwrap().metadata().channel.as_ref().unwrap(), false)
                 })
         }).await.map_err(|err| println!("${:?}",err)).ok();
-        sleep(Duration::from_secs(5));
-        command.delete_original_interaction_response(&ctx.http).await.map_err(|err| println!("${:?}",err)).ok();
     }
 }
 

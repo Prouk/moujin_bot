@@ -51,7 +51,7 @@ pub fn get_handler() -> Handler {
                         bin::voice::pause(&ctx, command).await;
                     },
                     "send_info" => {
-                        bin::voice::pause(&ctx, command).await;
+                        bin::voice::send_music(&ctx, command).await;
                     },
                     _ => {
                         bin::main::no_component_command(&ctx, command).await;
