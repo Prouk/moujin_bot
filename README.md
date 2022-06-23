@@ -22,7 +22,16 @@ But i don't like message spamming in a channel, so with this bot every commands 
 Every info will always be on that specific message, and it will be updated each time a music end.
 same thing for the commands, there is no `skip` or `stop` commands, every interraction is made with buttons on the `player`.
 
-At the end of the queue, the player will disappear until we add another song.
+At the end of the queue, the player will disappear until we add another song `(the bot need to re join a channel before playing another song)`.
+
+Curently the bot support :
+
+- Queuing songs
+- Play / Pause
+- Skip
+- Stop
+- "Send me that" button that send you the info of the currently playing music in a DM channel (so you can keep track of the music you like in this DM chann)
+- other features coming soon ...
 
 ## Authors
 
